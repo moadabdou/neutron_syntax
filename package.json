@@ -1,0 +1,26 @@
+{
+  "name": "neutron",
+  "displayName": "neutron",
+  "description": "",
+  "version": "0.0.1",
+  "icon": "icon.png",
+  "engines": {
+    "vscode": "^1.104.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "contributes": {
+    "languages": [{
+      "id": "neutron",
+      "aliases": ["neutron", "neutron"],
+      "extensions": [".nt"],
+      "configuration": "./language-configuration.json"
+    }],
+    "grammars": [{
+      "language": "neutron",
+      "scopeName": "source.neutron",
+      "path": "./syntaxes/neutron.tmLanguage.json"
+    }]
+  }
+}

@@ -1,0 +1,161 @@
+{
+    "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+    "name": "neutron",
+    "scopeName": "source.neutron",
+    "patterns": [
+        { "include": "#comments" },
+        { "include": "#imports" },
+        { "include": "#keywords" },
+        { "include": "#constants" },
+        { "include": "#types" },
+        { "include": "#strings" },
+        { "include": "#numbers" },
+        { "include": "#functions" },
+        { "include": "#variables" }
+    ],
+    "repository": {
+        "comments": {
+            "patterns": [
+                {
+                    "name": "comment.line.double-slash.neutron",
+                    "match": "//.*$"
+                },
+                {
+                    "name": "comment.block.neutron",
+                    "begin": "/\\*",
+                    "end": "\\*/"
+                }
+            ]
+        },
+
+        "keywords": {
+            "patterns": [
+                {
+                    "name": "storage.type.var.neutron",
+                    "match": "\\b(var)\\b"
+                },
+                {
+                    "name": "keyword.control.neutron",
+                    "match": "\\b(if|else|while|for|return|break|continue|class|fun|this|and|or|not|in|new)\\b"
+                }
+            ]
+        },
+
+        "constants": {
+            "patterns": [
+                {
+                    "name": "constant.language.neutron",
+                    "match": "\\b(true|false|null)\\b"
+                },
+                {
+                    "name": "constant.other.neutron",
+                    "match": "\\b[A-Z_][A-Z0-9_]*\\b"
+                }
+            ]
+        },
+
+        "types": {
+            "patterns": [
+                {
+                    "name": "support.class.neutron",
+                    "match": "\\b[A-Z][a-zA-Z0-9_]*\\b"
+                }
+            ]
+        },
+
+        "strings": {
+            "patterns": [
+                {
+                    "name": "string.quoted.double.neutron",
+                    "begin": "\"",
+                    "end": "\"",
+                    "patterns": [
+                        {
+                            "name": "constant.character.escape.neutron",
+                            "match": "\\\\."
+                        }
+                    ]
+                },
+                {
+                    "name": "string.quoted.single.neutron",
+                    "begin": "'",
+                    "end": "'",
+                    "patterns": [
+                        {
+                            "name": "constant.character.escape.neutron",
+                            "match": "\\\\."
+                        }
+                    ]
+                }
+            ]
+        },
+
+        "numbers": {
+            "patterns": [
+                {
+                    "name": "constant.numeric.neutron",
+                    "match": "\\b\\d+(\\.\\d+)?\\b"
+                }
+            ]
+        },
+
+        "functions": {
+            "patterns": [
+                {
+                    "comment": "Function definitions after 'fun'",
+                    "begin": "\\bfun\\s+",
+                    "beginCaptures": {
+                        "0": { "name": "keyword.other.function.neutron" }
+                    },
+                    "end": "(?=\\()",
+                    "name": "meta.function.definition.neutron",
+                    "patterns": [
+                        {
+                            "name": "entity.name.function.definition.neutron",
+                            "match": "\\b[a-zA-Z_][a-zA-Z0-9_]*\\b"
+                        }
+                    ]
+                },
+                {
+                    "comment": "Standalone function calls like say()",
+                    "name": "entity.name.function.call.neutron",
+                    "match": "(?<!\\bfun\\s+)\\b[a-zA-Z_][a-zA-Z0-9_]*\\s*(?=\\()"
+                },
+                {
+                    "comment": "Method calls like object.method() — only color method name",
+                    "name": "entity.name.function.call.method.neutron",
+                    "match": "(?<=\\.)[a-zA-Z_][a-zA-Z0-9_]*(?=\\s*\\()"
+                }
+            ]
+        },
+
+        "variables": {
+            "patterns": [
+                {
+                    "name": "variable.other.neutron",
+                    "match": "\\b[a-z_][a-zA-Z0-9_]*\\b"
+                }
+            ]
+        },
+        "imports": {
+            "patterns": [
+                {
+                    "begin": "\\b(use)\\b\\s+",
+                    "beginCaptures": {
+                        "1": { "name": "keyword.control.import" }
+                    },
+                    "end": "(;)",
+                    "endCaptures": {
+                        "1": { "name": "punctuation.terminator" }
+                    },
+                    "patterns": [
+                        {
+                            "name": "support.type.module",
+                            "match": "\\b[a-zA-Z_][a-zA-Z0-9_]*(?:\\.[a-zA-Z_][a-zA-Z0-9_]*)*\\b"
+                        }
+                    ]
+                }
+            ]
+        }
+    }
+}
