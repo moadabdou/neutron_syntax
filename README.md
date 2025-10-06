@@ -25,7 +25,7 @@ This VS Code extension provides full syntax highlighting, including keywords, va
 
 ## Requirements
 
-No additional requirements are needed. Just install the extension in VS Code and open a `.neutron` file to see syntax highlighting.
+No additional requirements are needed. Just install the extension in VS Code and open a `.nt` file to see syntax highlighting.
 
 ---
 
