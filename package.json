@@ -3,7 +3,11 @@
   "displayName": "neutron",
   "description": "",
   "version": "0.0.1",
+  "publisher": "moadabdou",
   "icon": "icon.png",
+  "repository": {
+    "url": "https://github.com/moadabdou/neutron_syntax"
+  },
   "engines": {
     "vscode": "^1.104.0"
   },
