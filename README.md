@@ -13,10 +13,40 @@ This VS Code extension provides full syntax highlighting, including keywords, va
   - Constants (`true`, `false`, `null`, ALL_CAPS) in deep blue
   - Strings in orange/yellow
   - Numbers in cyan/purple
+  - Scientific notation numbers (`1.23e-4`, `6E10`, `.5`)
   - Function definitions (`fun greet()`) in blue
   - Function calls (`say()`, `counter.increment()`) in bright yellow
   - Object method calls only highlight the method, not the object
   - `use` imports: `use` keyword in blue, module names in green
+  - Optional type annotations in var declarations: `var int x = 42;` with types highlighted
+  - Pattern matching keywords: `match`, `case`, `default` and the `=>` arrow operator
+  - Lambda function parameters in inline `fun(...) { ... }`
+  - Built-in module names highlighted in `use` statements: `sys`, `json`, `math`, `convert`, `time`, `http`
+  - File imports via `using 'file.nt';`
+
+### Example: match
+
+```
+var day = 3;
+match (day) {
+    case 1 => say("Monday");
+    case 2 => say("Tuesday");
+    case 3 => say("Wednesday");
+    default => say("Other day");
+}
+```
+
+### Example: lambdas and imports
+
+```
+use sys;
+use json;
+
+using 'utils.nt';
+
+var add = fun(a, b) { return a + b; };
+say(add(2, 3));
+```
 - **Supports object-oriented constructs**
   - Classes, methods, `this` keyword, multiple instances
 - **Lightweight and easy to install**

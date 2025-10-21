@@ -1,0 +1,12 @@
+{
+  "$schema": "vscode://schemas/icon-theme",
+  "iconDefinitions": {
+    "neutron-icon": {
+      "iconPath": "./neutron-icon.svg"
+    }
+  },
+  "fileExtensions": {
+    "nt": "neutron-icon"
+  },
+  "fileNames": {}
+}

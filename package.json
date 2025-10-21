@@ -2,7 +2,7 @@
   "name": "neutron",
   "displayName": "neutron",
   "description": "",
-  "version": "0.0.1",
+  "version": "0.0.5",
   "publisher": "moadabdou",
   "icon": "icon.png",
   "repository": {
@@ -15,6 +15,13 @@
     "Programming Languages"
   ],
   "contributes": {
+    "iconThemes": [
+      {
+        "id": "neutron-icons",
+        "label": "Neutron File Icons",
+        "path": "./icons/neutron-icon-theme.json"
+      }
+    ],
     "languages": [{
       "id": "neutron",
       "aliases": ["neutron", "neutron"],

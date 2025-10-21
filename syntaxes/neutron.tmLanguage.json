@@ -5,11 +5,15 @@
     "patterns": [
         { "include": "#comments" },
         { "include": "#imports" },
+        { "include": "#file-imports" },
+        { "include": "#typed-variables" },
         { "include": "#keywords" },
+        { "include": "#operators" },
         { "include": "#constants" },
         { "include": "#types" },
         { "include": "#strings" },
         { "include": "#numbers" },
+        { "include": "#lambdas" },
         { "include": "#functions" },
         { "include": "#variables" }
     ],
@@ -36,7 +40,16 @@
                 },
                 {
                     "name": "keyword.control.neutron",
-                    "match": "\\b(if|else|while|for|return|break|continue|class|fun|this|and|or|not|in|new)\\b"
+                    "match": "\\b(if|else|while|for|return|break|continue|class|fun|this|and|or|not|in|new|match|case|default)\\b"
+                }
+            ]
+        },
+
+        "operators": {
+            "patterns": [
+                {
+                    "name": "keyword.operator.arrow.neutron",
+                    "match": "=>"
                 }
             ]
         },
@@ -45,7 +58,7 @@
             "patterns": [
                 {
                     "name": "constant.language.neutron",
-                    "match": "\\b(true|false|null)\\b"
+                    "match": "\\b(true|false|nil)\\b"
                 },
                 {
                     "name": "constant.other.neutron",
@@ -59,6 +72,27 @@
                 {
                     "name": "support.class.neutron",
                     "match": "\\b[A-Z][a-zA-Z0-9_]*\\b"
+                }
+            ]
+        },
+
+        "typed-variables": {
+            "patterns": [
+                {
+                    "comment": "Optional type annotations after var: var int x = 1;",
+                    "begin": "\\b(var)\\s+(?:(int|float|string|bool|array|object|any))\\b",
+                    "beginCaptures": {
+                        "1": { "name": "storage.type.var.neutron" },
+                        "2": { "name": "storage.type.primitive.neutron" }
+                    },
+                    "end": "(?=\\s*[=;\\)])",
+                    "name": "meta.variable.typed-declaration.neutron",
+                    "patterns": [
+                        {
+                            "name": "variable.other.neutron",
+                            "match": "\\b[a-z_][a-zA-Z0-9_]*\\b"
+                        }
+                    ]
                 }
             ]
         },
@@ -94,7 +128,7 @@
             "patterns": [
                 {
                     "name": "constant.numeric.neutron",
-                    "match": "\\b\\d+(\\.\\d+)?\\b"
+                    "match": "\\b(?:\\d+\\.\\d*|\\.\\d+|\\d+)(?:[eE][+-]?\\d+)?\\b"
                 }
             ]
         },
@@ -150,8 +184,57 @@
                     },
                     "patterns": [
                         {
+                            "name": "support.type.module.builtin.neutron",
+                            "match": "\\b(sys|json|math|convert|time|http)\\b"
+                        },
+                        {
                             "name": "support.type.module",
                             "match": "\\b[a-zA-Z_][a-zA-Z0-9_]*(?:\\.[a-zA-Z_][a-zA-Z0-9_]*)*\\b"
+                        }
+                    ]
+                }
+            ]
+        }
+        ,
+        "file-imports": {
+            "patterns": [
+                {
+                    "begin": "\\b(using)\\b\\s*",
+                    "beginCaptures": {
+                        "1": { "name": "keyword.control.import" }
+                    },
+                    "end": "(;)",
+                    "endCaptures": {
+                        "1": { "name": "punctuation.terminator" }
+                    },
+                    "patterns": [
+                        {
+                            "name": "string.quoted.single.path.neutron",
+                            "match": "'(?:\\\\'|[^'])*'"
+                        }
+                    ]
+                }
+            ]
+        }
+        ,
+        "lambdas": {
+            "patterns": [
+                {
+                    "comment": "Anonymous function (lambda) parameters",
+                    "begin": "\\bfun\\s*\\(",
+                    "beginCaptures": {
+                        "0": { "name": "keyword.other.function.neutron" }
+                    },
+                    "end": "\\)",
+                    "name": "meta.function.lambda.neutron",
+                    "patterns": [
+                        {
+                            "name": "variable.parameter.neutron",
+                            "match": "\\b[a-zA-Z_][a-zA-Z0-9_]*\\b"
+                        },
+                        {
+                            "name": "punctuation.separator.parameter.neutron",
+                            "match": ","
                         }
                     ]
                 }

@@ -1,0 +1,29 @@
+// Test optional type annotations highlighting
+say("=== Testing Type Annotations Highlighting ===");
+
+var int count = 42;
+var float pi = 3.14159;
+var string name = "Alice";
+var bool isActive = true;
+var array numbers = [1, 2, 3];
+var object person = {"name": "Bob", "age": 30};
+var any value = nil;
+
+// Ensure regular var still works
+var x;
+var y = 10;
+
+// Numbers with scientific notation
+var float scientific = 1.23e-4;
+var float big = 6.022E23;
+
+// Function and method calls present
+fun greet(who) {
+    say("Hello, " + who);
+}
+
+greet(name);
+numbers.push(4);
+say(person.name);
+
+say("=== Done ===");

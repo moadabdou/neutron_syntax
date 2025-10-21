@@ -1,0 +1,30 @@
+// Built-in modules import highlighting
+use sys;
+use json;
+use math;
+use convert;
+use time;
+use http;
+
+// File import highlighting
+using 'utils.nt';
+
+// Lambda examples
+var add = fun(a, b) { return a + b; };
+var square = fun(x) { return x * x; };
+var greet = fun() { return "Hello!"; };
+
+say(add(2, 3));
+say(square(4));
+say(greet());
+
+var ops = [ fun(x) { return x + 10; }, fun(x) { return x * 2; } ];
+say(ops[0](5));
+say(ops[1](5));
+
+// Using built-in modules
+var pi = math.pi;
+say(json.stringify({"ok": true}));
+say(convert.int_to_bin(10));
+say(time.now());
+// http.get("https://example.com"); // comment out to avoid actual requests in examples
