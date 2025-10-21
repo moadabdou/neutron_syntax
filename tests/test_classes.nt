@@ -1,3 +1,4 @@
+
 // Test classes and OOP
 say("=== Testing Classes and OOP ===");
 
@@ -20,7 +21,9 @@ class Person {
     }
 }
 
+
 var person = Person();
+
 person.initialize("Alice", 30);
 person.greet();
 var age = person.getAge();
@@ -91,7 +94,10 @@ class Rectangle {
 
 var rect = Rectangle();
 rect.initialize(5, 3);
+
 var area = rect.area();
+
+
 if (area == 15) {
     say("✓ Class methods with calculations work");
 } else {

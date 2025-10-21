@@ -2,19 +2,54 @@
   "name": "neutron",
   "displayName": "neutron",
   "description": "",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "publisher": "moadabdou",
   "icon": "icon.png",
   "repository": {
     "url": "https://github.com/moadabdou/neutron_syntax"
   },
+  "main": "./extension.js",
   "engines": {
     "vscode": "^1.104.0"
   },
+  "activationEvents": [],
+  "contributes": {
+    "configuration": {
+      "title": "Neutron",
+      "properties": {
+        "neutron.runtimePath": {
+          "type": "string",
+          "default": "neutron",
+          "markdownDescription": "Path to the Neutron runtime executable. Example: C:/tools/neutron.exe or neutron if in PATH."
+        },
+        "neutron.importPaths": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": [],
+          "markdownDescription": "Additional directories to search for .nt files used by completion suggestions for 'using'."
+        }
+      }
+    },
+    "commands": [
+      { "command": "neutron.reloadCompletions", "title": "Neutron: Reload Completions" },
+      { "command": "neutron.runCurrentFile", "title": "Neutron: Run Current File" }
+    ],
+    "keybindings": [
+      {
+        "command": "neutron.runCurrentFile",
+        "key": "ctrl+alt+r",
+        "when": "editorLangId == neutron && editorTextFocus"
+      },
+      {
+        "command": "neutron.runCurrentFile",
+        "key": "cmd+alt+r",
+        "when": "editorLangId == neutron && editorTextFocus",
+        "mac": "cmd+alt+r"
+      }
+    ],
   "categories": [
     "Programming Languages"
   ],
-  "contributes": {
     "iconThemes": [
       {
         "id": "neutron-icons",

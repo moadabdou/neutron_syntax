@@ -17,6 +17,12 @@
 - Support `using 'file.nt';` file import highlighting.
 - Add example tests: `tests/test_lambdas_and_modules.nt`.
 
+## 0.0.6 - 2025-10-21
+
+- Add command "Neutron: Run Current File" and a CodeLens "Run Neutron" on `.nt` files.
+- Runs `neutron {file_name}` in a dedicated terminal. Configure runtime path via `neutron.runtimePath`.
+ - Default keybinding: `Ctrl+Alt+R` (Windows/Linux), `Cmd+Alt+R` (macOS).
+
 # Change Log
 
 All notable changes to the "neutron" extension will be documented in this file.

@@ -50,12 +50,20 @@ say(add(2, 3));
 - **Supports object-oriented constructs**
   - Classes, methods, `this` keyword, multiple instances
 - **Lightweight and easy to install**
+  
+- **Run Neutron files**
+  - Click the "Run Neutron" CodeLens at the top of `.nt` files, or run the command "Neutron: Run Current File".
+  - The extension runs: `neutron {file_name}` in a dedicated terminal named "Neutron".
+  - Configure the runtime path via setting `neutron.runtimePath` if `neutron` is not on your PATH.
+  - Shortcut: Press `Ctrl+Alt+R` (Windows/Linux) or `Cmd+Alt+R` (macOS) to run the current file.
 
 ---
 
 ## Requirements
 
-No additional requirements are needed. Just install the extension in VS Code and open a `.nt` file to see syntax highlighting.
+For syntax highlighting, no additional requirements are needed.
+
+To execute scripts, ensure the Neutron runtime is installed and available as `neutron` on your PATH, or set `neutron.runtimePath` to the full path of the executable.
 
 ---
 
