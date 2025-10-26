@@ -1,0 +1,59 @@
+// Test elif keyword functionality
+say("=== Testing Elif Keyword ===");
+
+// Test 1: Basic elif usage
+var score = 85;
+var grade = "";
+if (score >= 90) {
+    grade = "A";
+} elif (score >= 80) {
+    grade = "B";
+} elif (score >= 70) {
+    grade = "C";
+} else {
+    grade = "F";
+}
+
+if (grade == "B") {
+    say("✓ Elif keyword works (score 85 = B)");
+} else {
+    say("✗ Elif keyword failed");
+}
+
+// Test 2: Multiple elif conditions
+var temperature = 25;
+var weather = "";
+if (temperature > 30) {
+    weather = "hot";
+} elif (temperature > 20) {
+    weather = "warm";
+} elif (temperature > 10) {
+    weather = "cool";
+} else {
+    weather = "cold";
+}
+
+if (weather == "warm") {
+    say("✓ Multiple elif conditions work");
+} else {
+    say("✗ Multiple elif conditions failed");
+}
+
+// Test 3: Single elif usage
+var age = 18;
+var category = "";
+if (age < 13) {
+    category = "child";
+} elif (age >= 13 && age < 18) {
+    category = "teen";
+} else {
+    category = "adult";
+}
+
+if (category == "teen") {
+    say("✓ Single elif works");
+} else {
+    say("✗ Single elif failed");
+}
+
+say("\n=== All elif tests completed ===");

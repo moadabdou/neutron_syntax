@@ -1,0 +1,44 @@
+// Test file for type checking functionality
+// This should show errors when variable types don't match
+
+// This is correct - int assigned to int
+var int x = 42;
+
+// This should show an error - string assigned to int
+var int y = "hello";
+
+// This is correct - string assigned to string
+var string name = "Neutron";
+
+// This should show an error - int assigned to string
+var string message = 123;
+
+// This is correct - bool assigned to bool
+var bool isTrue = true;
+
+// This should show an error - string assigned to bool
+var bool isFalse = "false";
+
+// This is correct - no type annotation (dynamic)
+var dynamicVar = 42;
+dynamicVar = "now it's a string";  // This should be allowed
+
+// This should show an error - trying to assign string to typed int var
+x = "this should cause an error";
+
+// Correct usage
+x = 100;  // This should be fine
+
+// Correct float assignment
+var float pi = 3.14159;
+
+// This should show an error - string assigned to float
+var float e = "2.718";
+
+// Array type test
+var array numbers = [1, 2, 3];
+// This should be fine - assigning array to array variable
+numbers = [4, 5, 6];
+
+// This should show an error - string assigned to array
+numbers = "not an array";
