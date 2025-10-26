@@ -69,7 +69,7 @@ class NeutronParser {
                 continue;
             }
 
-            // Numbers (int and float)
+            // Numbers (int and float), including negative numbers
             if (/[0-9]/.test(char)) {
                 const start = current;
                 while (current < input.length && /[0-9.]/.test(input[current])) {
@@ -78,6 +78,22 @@ class NeutronParser {
                 tokens.push({
                     type: 'NUMBER',
                     value: input.slice(start, current),
+                    start: start,
+                    end: current
+                });
+                continue;
+            }
+            
+            // Handle negative numbers (when '-' is followed by a digit)
+            if (char === '-' && current + 1 < input.length && /[0-9]/.test(input[current + 1])) {
+                const start = current;  // Include the minus sign
+                current++;  // Skip the minus sign
+                while (current < input.length && /[0-9.]/.test(input[current])) {
+                    current++;
+                }
+                tokens.push({
+                    type: 'NUMBER',
+                    value: input.slice(start, current),  // Include the minus sign in the number
                     start: start,
                     end: current
                 });
@@ -301,7 +317,7 @@ class NeutronParser {
                 continue;
             }
 
-            // Numbers (int and float)
+            // Numbers (int and float), including negative numbers
             if (/[0-9]/.test(char)) {
                 const start = current;
                 while (current < input.length && /[0-9.]/.test(input[current])) {
@@ -310,6 +326,22 @@ class NeutronParser {
                 tokens.push({
                     type: 'NUMBER',
                     value: input.slice(start, current),
+                    start: start,
+                    end: current
+                });
+                continue;
+            }
+            
+            // Handle negative numbers (when '-' is followed by a digit)
+            if (char === '-' && current + 1 < input.length && /[0-9]/.test(input[current + 1])) {
+                const start = current;  // Include the minus sign
+                current++;  // Skip the minus sign
+                while (current < input.length && /[0-9.]/.test(input[current])) {
+                    current++;
+                }
+                tokens.push({
+                    type: 'NUMBER',
+                    value: input.slice(start, current),  // Include the minus sign in the number
                     start: start,
                     end: current
                 });
@@ -1097,7 +1129,7 @@ class NeutronParser {
             return this.parseAssignmentExpression(expr);
         }
         
-        // Check for semicolon - if present, consume it; if not, report an error
+        // Check for semicolon - if present, consume it
         if (this.currentToken() && this.currentToken().value === ';') {
             this.nextToken(); // consume the semicolon
             return {
@@ -1107,11 +1139,8 @@ class NeutronParser {
                 end: this.currentToken() ? this.currentToken().start : expr.end + 1  // +1 for the semicolon character
             };
         } else {
-            // Find the end of the current line to highlight the entire line
-            const lineEnd = this.findEndOfLine(expr.end);
-            // Report missing semicolon error
-            this.addError(`Missing semicolon at end of statement`, expr.end, lineEnd);
-
+            // For expression statements, don't necessarily require semicolons at end of line
+            // Just return the statement without adding an error
             return {
                 type: 'ExpressionStatement',
                 expression: expr,
@@ -1131,7 +1160,7 @@ class NeutronParser {
         
         const right = this.parseExpression();
         
-        // Check for semicolon - if present, consume it; if not, report an error
+        // Check for semicolon - if present, consume it
         if (this.currentToken() && this.currentToken().value === ';') {
             this.nextToken(); // consume the semicolon
             // Return the assignment with proper end position after the semicolon
@@ -1144,12 +1173,7 @@ class NeutronParser {
                 end: this.currentToken() ? this.currentToken().start : right.end + 1  // +1 for the semicolon character
             };
         } else {
-            // Find the end of the current line to highlight the entire line
-            const lineEnd = this.findEndOfLine(right.end);
-            // Report missing semicolon error
-            this.addError(`Missing semicolon at end of assignment`, right.end, lineEnd);
-            
-            // Return the assignment even though it's missing semicolon
+            // For assignments, don't necessarily require semicolons at end of line
             return {
                 type: 'AssignmentExpression',
                 operator: '=',

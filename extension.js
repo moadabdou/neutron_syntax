@@ -452,23 +452,6 @@ function activate(context) {
     vscode.languages.registerCompletionItemProvider({ language: 'neutron' }, provider, '.', '\'', '"', '_')
   );
 
-  // CodeLens: Add a Run lens at the top of Neutron files
-  const codeLensProvider = {
-    provideCodeLenses(document) {
-      if (document.languageId !== 'neutron') return [];
-      const top = new vscode.Range(0, 0, 0, 0);
-      const cmd = {
-        title: '▶ Run',
-        command: 'neutron.runCurrentFile',
-        tooltip: 'Run this Neutron file'
-      };
-      return [new vscode.CodeLens(top, cmd)];
-    }
-  };
-  context.subscriptions.push(
-    vscode.languages.registerCodeLensProvider({ language: 'neutron' }, codeLensProvider)
-  );
-
   // Status Bar: Run button, visible when a Neutron file is active
   const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
   statusBarItem.text = '$(play) Run Neutron';

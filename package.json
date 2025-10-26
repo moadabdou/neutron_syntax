@@ -46,9 +46,19 @@
       },
       {
         "command": "neutron.runCurrentFile",
-        "title": "Neutron: Run Current File"
+        "title": "Run Current File",
+        "icon": "$(play)"
       }
     ],
+    "menus": {
+      "editor/title": [
+        {
+          "command": "neutron.runCurrentFile",
+          "when": "resourceLangId == neutron",
+          "group": "navigation"
+        }
+      ]
+    },
     "keybindings": [
       {
         "command": "neutron.runCurrentFile",
