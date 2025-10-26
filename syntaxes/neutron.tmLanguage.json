@@ -40,7 +40,7 @@
                 },
                 {
                     "name": "keyword.control.neutron",
-                    "match": "\\b(if|else|while|for|return|break|continue|class|fun|this|and|or|not|in|new|match|case|default)\\b"
+                    "match": "\\b(if|elif|else|while|for|return|break|continue|class|fun|this|and|or|not|in|new|match|case|default)\\b"
                 }
             ]
         },

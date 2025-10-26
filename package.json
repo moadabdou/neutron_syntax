@@ -1,18 +1,20 @@
 {
   "name": "neutron",
   "displayName": "neutron",
-  "description": "",
-  "version": "0.0.6",
+  "description": "Neutron is a lightweight, object-oriented toy programming language designed for learning and experimentation. This VS Code extension provides full syntax highlighting and type checking, including keywords, variables, constants, strings, numbers, function definitions and calls, object method calls, and `use` imports.",
+  "version": "0.0.8",
   "publisher": "moadabdou",
   "icon": "icon.png",
   "repository": {
-    "url": "https://github.com/moadabdou/neutron_syntax"
+    "url": "git+https://github.com/moadabdou/neutron_syntax.git"
   },
   "main": "./extension.js",
   "engines": {
     "vscode": "^1.104.0"
   },
-  "activationEvents": [],
+  "activationEvents": [
+    "onLanguage:neutron"
+  ],
   "contributes": {
     "configuration": {
       "title": "Neutron",
@@ -24,15 +26,28 @@
         },
         "neutron.importPaths": {
           "type": "array",
-          "items": { "type": "string" },
+          "items": {
+            "type": "string"
+          },
           "default": [],
           "markdownDescription": "Additional directories to search for .nt files used by completion suggestions for 'using'."
+        },
+        "neutron.enableTypeChecking": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable type checking for Neutron files"
         }
       }
     },
     "commands": [
-      { "command": "neutron.reloadCompletions", "title": "Neutron: Reload Completions" },
-      { "command": "neutron.runCurrentFile", "title": "Neutron: Run Current File" }
+      {
+        "command": "neutron.reloadCompletions",
+        "title": "Neutron: Reload Completions"
+      },
+      {
+        "command": "neutron.runCurrentFile",
+        "title": "Neutron: Run Current File"
+      }
     ],
     "keybindings": [
       {
@@ -47,9 +62,9 @@
         "mac": "cmd+alt+r"
       }
     ],
-  "categories": [
-    "Programming Languages"
-  ],
+    "categories": [
+      "Programming Languages"
+    ],
     "iconThemes": [
       {
         "id": "neutron-icons",
@@ -57,16 +72,47 @@
         "path": "./icons/neutron-icon-theme.json"
       }
     ],
-    "languages": [{
-      "id": "neutron",
-      "aliases": ["neutron", "neutron"],
-      "extensions": [".nt"],
-      "configuration": "./language-configuration.json"
-    }],
-    "grammars": [{
-      "language": "neutron",
-      "scopeName": "source.neutron",
-      "path": "./syntaxes/neutron.tmLanguage.json"
-    }]
+    "languages": [
+      {
+        "id": "neutron",
+        "aliases": [
+          "neutron",
+          "neutron"
+        ],
+        "extensions": [
+          ".nt"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "neutron",
+        "scopeName": "source.neutron",
+        "path": "./syntaxes/neutron.tmLanguage.json"
+      }
+    ]
+  },
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/moadabdou/neutron_syntax/issues"
+  },
+  "homepage": "https://github.com/moadabdou/neutron_syntax#readme",
+  "dependencies": {
+    "vscode-languageserver": "^9.0.1",
+    "vscode-languageserver-textdocument": "^1.0.12",
+    "vscode-languageclient": "^9.0.1"
+  },
+  "devDependencies": {
+    "vscode": "^1.1.37"
   }
 }
