@@ -1,8 +1,8 @@
 {
   "name": "neutron",
-  "displayName": "neutron",
+  "displayName": "Neutron",
   "description": "Neutron is a lightweight, object-oriented toy programming language designed for learning and experimentation. This VS Code extension provides full syntax highlighting and type checking, including keywords, variables, constants, strings, numbers, function definitions and calls, object method calls, and `use` imports.",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "publisher": "moadabdou",
   "icon": "icon.png",
   "repository": {
@@ -90,7 +90,8 @@
           "neutron"
         ],
         "extensions": [
-          ".nt"
+          ".nt",
+          ".quark"
         ],
         "configuration": "./language-configuration.json"
       }

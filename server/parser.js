@@ -1,4 +1,7 @@
-// Simple parser for Neutron language constructs
+// Copyright 2026 (c) Yasakei. All rights reserved.
+//
+// Licensed under Neutron Public License v1.0 (the "License");
+
 class NeutronParser {
     constructor() {
         this.tokens = [];
@@ -203,7 +206,7 @@ class NeutronParser {
             'var', 'int', 'float', 'string', 'bool', 'array', 'object', 'any',
             'if', 'elif', 'else', 'while', 'for', 'return', 'break', 'continue',
             'class', 'fun', 'this', 'and', 'or', 'not', 'in', 'new', 'match',
-            'case', 'default', 'use', 'using', 'true', 'false', 'nil'
+            'case', 'default', 'use', 'using', 'true', 'false', 'nil', 'static'
         ];
         return keywords.includes(value);
     }
@@ -451,12 +454,14 @@ class NeutronParser {
         if (!token) return null;
 
         try {
-            if (token.value === 'var') {
+            if (token.value === 'static' || token.value === 'var') {
                 return this.parseVariableDeclaration();
             } else if (token.value === 'if') {
                 return this.parseIfStatement();
             } else if (token.value === 'while') {
                 return this.parseWhileStatement();
+            } else if (token.value === 'do') {
+                return this.parseDoWhileStatement();
             } else if (token.value === 'for') {
                 return this.parseForStatement();
             } else if (token.value === 'fun') {
@@ -465,6 +470,12 @@ class NeutronParser {
                 return this.parseClassDeclaration();
             } else if (token.value === 'return') {
                 return this.parseReturnStatement();
+            } else if (token.value === 'match') {
+                return this.parseMatchStatement();
+            } else if (token.value === 'retry') {
+                return this.parseRetryStatement();
+            } else if (token.value === 'try') {
+                return this.parseTryStatement();
             } else if (token.type === 'IDENTIFIER') {
                 return this.parseExpressionStatement();
             } else {
@@ -500,13 +511,27 @@ class NeutronParser {
     
     // Helper method to check if a token starts a statement
     isStatementStart(token) {
-        const statementStarters = ['var', 'if', 'while', 'for', 'fun', 'class', 'return'];
+        const statementStarters = ['var', 'if', 'while', 'do', 'for', 'fun', 'class', 'return', 'match', 'retry', 'try'];
         return statementStarters.includes(token.value) || token.type === 'IDENTIFIER';
     }
 
     parseVariableDeclaration() {
+        let isStatic = false;
         const startToken = this.currentToken();
-        this.nextToken(); // skip 'var'
+
+        // Check if this is a static variable declaration
+        if (this.currentToken().value === 'static') {
+            isStatic = true;
+            this.nextToken(); // skip 'static'
+
+            // After 'static', we expect 'var'
+            if (this.currentToken() && this.currentToken().value !== 'var') {
+                throw new Error(`Expected 'var' after 'static' at position ${this.currentToken().start}`);
+            }
+            this.nextToken(); // skip 'var'
+        } else {
+            this.nextToken(); // skip 'var'
+        }
 
         // Check if there's a type annotation
         let declaredType = null;
@@ -538,6 +563,7 @@ class NeutronParser {
                 declaredType: declaredType,
                 name: name,
                 init: init,
+                isStatic: isStatic,  // Add isStatic flag
                 start: startToken.start,
                 end: this.currentToken() ? this.currentToken().start : nameToken.end + 1  // +1 for the semicolon character
             };
@@ -552,6 +578,7 @@ class NeutronParser {
                 declaredType: declaredType,
                 name: name,
                 init: init,
+                isStatic: isStatic,  // Add isStatic flag
                 start: startToken.start,
                 end: nameToken.end
             };
@@ -567,17 +594,40 @@ class NeutronParser {
         this.nextToken(); // skip 'if'
 
         if (!this.currentToken() || this.currentToken().value !== '(') {
-            throw new Error(`Expected '(' after 'if' at position ${this.currentToken().start}`);
+            const errorPos = this.currentToken() ? this.currentToken().start : this.tokens.length - 1;
+            this.addError(`Expected '(' after 'if'`, errorPos, errorPos + 1);
+            // Try to recover by looking for the opening parenthesis
+            while (this.currentToken() && this.currentToken().value !== '(' && this.currentToken().value !== '{' && this.currentToken().value !== ';') {
+                this.nextToken();
+            }
+            if (!this.currentToken()) {
+                return {
+                    type: 'IfStatement',
+                    test: null,
+                    consequent: null,
+                    alternate: null,
+                    start: startToken.start,
+                    end: startToken.end
+                };
+            }
         }
 
         this.nextToken(); // skip '('
         const test = this.parseExpression();
-        
-        if (!this.currentToken() || this.currentToken().value !== ')') {
-            throw new Error(`Expected ')' after if condition at position ${this.currentToken().start}`);
-        }
 
-        this.nextToken(); // skip ')'
+        if (!this.currentToken() || this.currentToken().value !== ')') {
+            const errorPos = this.currentToken() ? this.currentToken().start : this.tokens.length - 1;
+            this.addError(`Expected ')' after if condition`, errorPos, errorPos + 1);
+            // Try to recover by looking for the closing parenthesis
+            while (this.currentToken() && this.currentToken().value !== ')' && this.currentToken().value !== '{' && this.currentToken().value !== ';') {
+                this.nextToken();
+            }
+            if (this.currentToken() && this.currentToken().value === ')') {
+                this.nextToken(); // skip ')'
+            }
+        } else {
+            this.nextToken(); // skip ')'
+        }
 
         const consequent = this.parseBlock();
 
@@ -598,7 +648,7 @@ class NeutronParser {
             consequent: consequent,
             alternate: alternate,
             start: startToken.start,
-            end: this.currentToken() ? this.currentToken().end : startToken.end
+            end: this.currentToken() ? this.currentToken().end : (consequent ? consequent.end : startToken.end)
         };
     }
 
@@ -637,17 +687,39 @@ class NeutronParser {
         this.nextToken(); // skip 'while'
 
         if (!this.currentToken() || this.currentToken().value !== '(') {
-            throw new Error(`Expected '(' after 'while' at position ${this.currentToken().start}`);
+            const errorPos = this.currentToken() ? this.currentToken().start : this.tokens.length - 1;
+            this.addError(`Expected '(' after 'while'`, errorPos, errorPos + 1);
+            // Try to recover by looking for the opening parenthesis or skipping to next statement
+            while (this.currentToken() && this.currentToken().value !== '(' && this.currentToken().value !== '{' && this.currentToken().value !== ';') {
+                this.nextToken();
+            }
+            if (!this.currentToken()) {
+                return {
+                    type: 'WhileStatement',
+                    test: null,
+                    body: null,
+                    start: startToken.start,
+                    end: startToken.end
+                };
+            }
         }
 
         this.nextToken(); // skip '('
         const test = this.parseExpression();
-        
-        if (!this.currentToken() || this.currentToken().value !== ')') {
-            throw new Error(`Expected ')' after while condition at position ${this.currentToken().start}`);
-        }
 
-        this.nextToken(); // skip ')'
+        if (!this.currentToken() || this.currentToken().value !== ')') {
+            const errorPos = this.currentToken() ? this.currentToken().start : this.tokens.length - 1;
+            this.addError(`Expected ')' after while condition`, errorPos, errorPos + 1);
+            // Try to recover by looking for the closing parenthesis
+            while (this.currentToken() && this.currentToken().value !== ')' && this.currentToken().value !== '{' && this.currentToken().value !== ';') {
+                this.nextToken();
+            }
+            if (this.currentToken() && this.currentToken().value === ')') {
+                this.nextToken(); // skip ')'
+            }
+        } else {
+            this.nextToken(); // skip ')'
+        }
 
         const body = this.parseBlock();
 
@@ -656,7 +728,7 @@ class NeutronParser {
             test: test,
             body: body,
             start: startToken.start,
-            end: this.currentToken() ? this.currentToken().end : startToken.end
+            end: this.currentToken() ? this.currentToken().end : (body ? body.end : startToken.end)
         };
     }
 
@@ -892,6 +964,10 @@ class NeutronParser {
 
         if (token.type === 'STRING') {
             this.nextToken();
+            // Check if this string contains interpolation
+            if (token.value.includes('${')) {
+                return this.parseTemplateLiteral(token);
+            }
             return {
                 type: 'Literal',
                 value: token.value,
@@ -953,6 +1029,10 @@ class NeutronParser {
             }
             this.nextToken(); // skip ')'
             return expr;
+        }
+
+        if (token.value === 'throw') {
+            return this.parseThrowStatement();
         }
 
         if (token.value === '[') {
@@ -1279,8 +1359,8 @@ class NeutronParser {
         this.nextToken(); // skip 'return'
 
         let argument = null;
-        if (this.currentToken() && this.currentToken().value !== ';' && 
-            this.currentToken().value !== '}' && 
+        if (this.currentToken() && this.currentToken().value !== ';' &&
+            this.currentToken().value !== '}' &&
             this.currentToken().value !== '\n') {
             argument = this.parseExpression();
         }
@@ -1295,6 +1375,347 @@ class NeutronParser {
             argument: argument,
             start: startToken.start,
             end: argument ? argument.end : startToken.end + 6 // +6 for 'return'
+        };
+    }
+
+    parseThrowStatement() {
+        const startToken = this.currentToken();
+        this.nextToken(); // skip 'throw'
+
+        let argument = null;
+        if (this.currentToken() && this.currentToken().value !== ';' &&
+            this.currentToken().value !== '}' &&
+            this.currentToken().value !== '\n') {
+            argument = this.parseExpression();
+        }
+
+        // Skip semicolon if present
+        if (this.currentToken() && this.currentToken().value === ';') {
+            this.nextToken();
+        }
+
+        return {
+            type: 'ThrowStatement',
+            argument: argument,
+            start: startToken.start,
+            end: argument ? argument.end : startToken.end + 5 // +5 for 'throw'
+        };
+    }
+
+    parseTemplateLiteral(token) {
+        // This is a simplified implementation for string interpolation
+        // A real implementation would require more complex parsing
+        // For now, we'll return the raw string as a regular literal
+        return {
+            type: 'Literal',
+            value: token.value,  // This would have the full string with ${...} parts
+            raw: token.value,
+            start: token.start,
+            end: token.end
+        };
+    }
+
+    parseDoWhileStatement() {
+        const startToken = this.currentToken();
+        this.nextToken(); // skip 'do'
+
+        const body = this.parseBlock();
+
+        if (!this.currentToken() || this.currentToken().value !== 'while') {
+            throw new Error(`Expected 'while' after 'do' block at position ${this.currentToken().start}`);
+        }
+
+        this.nextToken(); // skip 'while'
+
+        if (!this.currentToken() || this.currentToken().value !== '(') {
+            throw new Error(`Expected '(' after 'while' in do-while at position ${this.currentToken().start}`);
+        }
+
+        this.nextToken(); // skip '('
+        const test = this.parseExpression();
+
+        if (!this.currentToken() || this.currentToken().value !== ')') {
+            throw new Error(`Expected ')' after while condition at position ${this.currentToken().start}`);
+        }
+
+        this.nextToken(); // skip ')'
+
+        // Do-while may optionally end with semicolon
+        if (this.currentToken() && this.currentToken().value === ';') {
+            this.nextToken(); // consume the semicolon
+        }
+
+        return {
+            type: 'DoWhileStatement',
+            test: test,
+            body: body,
+            start: startToken.start,
+            end: this.currentToken() ? this.currentToken().end : startToken.end
+        };
+    }
+
+    parseMatchStatement() {
+        const startToken = this.currentToken();
+        this.nextToken(); // skip 'match'
+
+        if (!this.currentToken() || this.currentToken().value !== '(') {
+            const errorPos = this.currentToken() ? this.currentToken().start : this.tokens.length - 1;
+            this.addError(`Expected '(' after 'match'`, errorPos, errorPos + 1);
+            // Try to recover by looking for the opening parenthesis
+            while (this.currentToken() && this.currentToken().value !== '(' && this.currentToken().value !== '{') {
+                this.nextToken();
+            }
+            if (!this.currentToken()) {
+                return {
+                    type: 'MatchStatement',
+                    discriminant: null,
+                    cases: [],
+                    start: startToken.start,
+                    end: startToken.end
+                };
+            }
+        }
+
+        this.nextToken(); // skip '('
+        const discriminant = this.parseExpression();
+
+        if (!this.currentToken() || this.currentToken().value !== ')') {
+            const errorPos = this.currentToken() ? this.currentToken().start : this.tokens.length - 1;
+            this.addError(`Expected ')' after match expression`, errorPos, errorPos + 1);
+            // Try to recover by looking for the closing parenthesis
+            while (this.currentToken() && this.currentToken().value !== ')' && this.currentToken().value !== '{') {
+                this.nextToken();
+            }
+            if (this.currentToken() && this.currentToken().value === ')') {
+                this.nextToken(); // skip ')'
+            }
+        } else {
+            this.nextToken(); // skip ')'
+        }
+
+        if (!this.currentToken() || this.currentToken().value !== '{') {
+            const errorPos = this.currentToken() ? this.currentToken().start : this.tokens.length - 1;
+            this.addError(`Expected '{' to start match body`, errorPos, errorPos + 1);
+            // Try to recover by looking for the opening brace
+            while (this.currentToken() && this.currentToken().value !== '{') {
+                this.nextToken();
+            }
+            if (!this.currentToken()) {
+                return {
+                    type: 'MatchStatement',
+                    discriminant: discriminant,
+                    cases: [],
+                    start: startToken.start,
+                    end: startToken.end
+                };
+            }
+        }
+
+        this.nextToken(); // skip '{'
+
+        const cases = [];
+        while (this.currentToken() && this.currentToken().value !== '}') {
+            if (this.currentToken().value === 'case') {
+                cases.push(this.parseMatchCase());
+            } else if (this.currentToken().value === 'default') {
+                cases.push(this.parseMatchDefault());
+            } else {
+                const errorPos = this.currentToken().start;
+                this.addError(`Expected 'case' or 'default' in match statement`, errorPos, errorPos + 1);
+                // Try to recover by skipping to the next case or closing brace
+                while (this.currentToken() && this.currentToken().value !== 'case' &&
+                       this.currentToken().value !== 'default' && this.currentToken().value !== '}') {
+                    this.nextToken();
+                }
+                if (this.currentToken() && (this.currentToken().value === 'case' || this.currentToken().value === 'default')) {
+                    // Parse the next valid case
+                    if (this.currentToken().value === 'case') {
+                        cases.push(this.parseMatchCase());
+                    } else {
+                        cases.push(this.parseMatchDefault());
+                    }
+                }
+            }
+        }
+
+        if (!this.currentToken() || this.currentToken().value !== '}') {
+            const errorPos = this.currentToken() ? this.currentToken().start : this.tokens.length - 1;
+            this.addError(`Expected '}' to end match statement`, errorPos, errorPos + 1);
+        } else {
+            this.nextToken(); // skip '}'
+        }
+
+        return {
+            type: 'MatchStatement',
+            discriminant: discriminant,
+            cases: cases,
+            start: startToken.start,
+            end: this.currentToken() ? this.currentToken().end : (this.tokens.length > 0 ? this.tokens[this.tokens.length - 1].end : startToken.end)
+        };
+    }
+
+    parseMatchCase() {
+        const startToken = this.currentToken();
+        this.nextToken(); // skip 'case'
+
+        const test = this.parseExpression();
+
+        if (!this.currentToken() || this.currentToken().value !== '=>') {
+            throw new Error(`Expected '=>' after match case at position ${this.currentToken().start}`);
+        }
+
+        this.nextToken(); // skip '=>'
+
+        let consequent;
+        if (this.currentToken() && this.currentToken().value === '{') {
+            consequent = this.parseBlock();
+        } else {
+            consequent = this.parseStatement();
+        }
+
+        return {
+            type: 'MatchCase',
+            test: test,
+            consequent: consequent,
+            start: startToken.start,
+            end: consequent.end
+        };
+    }
+
+    parseMatchDefault() {
+        const startToken = this.currentToken();
+        this.nextToken(); // skip 'default'
+
+        if (!this.currentToken() || this.currentToken().value !== '=>') {
+            throw new Error(`Expected '=>' after 'default' in match statement at position ${this.currentToken().start}`);
+        }
+
+        this.nextToken(); // skip '=>'
+
+        let consequent;
+        if (this.currentToken() && this.currentToken().value === '{') {
+            consequent = this.parseBlock();
+        } else {
+            consequent = this.parseStatement();
+        }
+
+        return {
+            type: 'MatchDefault',
+            consequent: consequent,
+            start: startToken.start,
+            end: consequent.end
+        };
+    }
+
+    parseRetryStatement() {
+        const startToken = this.currentToken();
+        this.nextToken(); // skip 'retry'
+
+        if (!this.currentToken() || this.currentToken().value !== '(') {
+            throw new Error(`Expected '(' after 'retry' at position ${this.currentToken().start}`);
+        }
+
+        this.nextToken(); // skip '('
+        const count = this.parseExpression();
+
+        if (!this.currentToken() || this.currentToken().value !== ')') {
+            throw new Error(`Expected ')' after retry count at position ${this.currentToken().start}`);
+        }
+
+        this.nextToken(); // skip ')'
+
+        const body = this.parseBlock();
+
+        let handler = null;
+        if (this.currentToken() && this.currentToken().value === 'catch') {
+            handler = this.parseCatchClause();
+        }
+
+        return {
+            type: 'RetryStatement',
+            count: count,
+            body: body,
+            handler: handler,
+            start: startToken.start,
+            end: this.currentToken() ? this.currentToken().end : startToken.end
+        };
+    }
+
+    parseTryStatement() {
+        const startToken = this.currentToken();
+        this.nextToken(); // skip 'try'
+
+        const block = this.parseBlock();
+
+        const handlers = [];
+        if (this.currentToken() && this.currentToken().value === 'catch') {
+            handlers.push(this.parseCatchClause());
+        }
+
+        let finalizer = null;
+        if (this.currentToken() && this.currentToken().value === 'finally') {
+            finalizer = this.parseFinallyClause();
+        }
+
+        return {
+            type: 'TryStatement',
+            block: block,
+            handlers: handlers,
+            finalizer: finalizer,
+            start: startToken.start,
+            end: this.currentToken() ? this.currentToken().end : startToken.end
+        };
+    }
+
+    parseCatchClause() {
+        const startToken = this.currentToken();
+        this.nextToken(); // skip 'catch'
+
+        if (!this.currentToken() || this.currentToken().value !== '(') {
+            throw new Error(`Expected '(' after 'catch' at position ${this.currentToken().start}`);
+        }
+
+        this.nextToken(); // skip '('
+
+        let param = null;
+        if (this.currentToken() && this.currentToken().type === 'IDENTIFIER') {
+            param = {
+                type: 'Identifier',
+                name: this.currentToken().value,
+                start: this.currentToken().start,
+                end: this.currentToken().end
+            };
+            this.nextToken(); // skip parameter name
+        }
+
+        if (!this.currentToken() || this.currentToken().value !== ')') {
+            throw new Error(`Expected ')' after catch parameter at position ${this.currentToken().start}`);
+        }
+
+        this.nextToken(); // skip ')'
+
+        const body = this.parseBlock();
+
+        return {
+            type: 'CatchClause',
+            param: param,
+            body: body,
+            start: startToken.start,
+            end: body.end
+        };
+    }
+
+    parseFinallyClause() {
+        const startToken = this.currentToken();
+        this.nextToken(); // skip 'finally'
+
+        const body = this.parseBlock();
+
+        return {
+            type: 'FinallyClause',
+            body: body,
+            start: startToken.start,
+            end: body.end
         };
     }
 

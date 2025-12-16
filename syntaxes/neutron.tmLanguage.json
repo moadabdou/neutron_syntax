@@ -8,6 +8,9 @@
         { "include": "#file-imports" },
         { "include": "#typed-variables" },
         { "include": "#keywords" },
+        { "include": "#match-statements" },
+        { "include": "#exception-handling" },
+        { "include": "#retry-statement" },
         { "include": "#operators" },
         { "include": "#constants" },
         { "include": "#types" },
@@ -40,7 +43,55 @@
                 },
                 {
                     "name": "keyword.control.neutron",
-                    "match": "\\b(if|elif|else|while|for|return|break|continue|class|fun|this|and|or|not|in|new|match|case|default)\\b"
+                    "match": "\\b(if|elif|else|while|do|for|return|break|continue|class|fun|this|and|or|not|in|new|match|case|default|retry|try|catch|finally|throw)\\b"
+                }
+            ]
+        },
+        "match-statements": {
+            "patterns": [
+                {
+                    "name": "meta.match.statement.neutron",
+                    "begin": "\\b(match)\\b",
+                    "beginCaptures": {
+                        "1": { "name": "keyword.control.neutron" }
+                    },
+                    "end": "\\}",
+                    "patterns": [
+                        {
+                            "begin": "\\(",
+                            "end": "\\)",
+                            "name": "meta.match.condition.neutron",
+                            "patterns": [
+                                {
+                                    "include": "#expression"
+                                }
+                            ]
+                        },
+                        {
+                            "begin": "\\{",
+                            "end": "(?=\\})",
+                            "name": "meta.match.body.neutron",
+                            "patterns": [
+                                {
+                                    "name": "meta.case.statement.neutron",
+                                    "match": "\\b(case)\\s+([^=]+)(=>)",
+                                    "captures": {
+                                        "1": { "name": "keyword.control.neutron" },
+                                        "2": { "name": "meta.match.pattern.neutron" },
+                                        "3": { "name": "keyword.operator.arrow.neutron" }
+                                    }
+                                },
+                                {
+                                    "name": "meta.case.default.neutron",
+                                    "match": "\\b(default)\\s*(=>)",
+                                    "captures": {
+                                        "1": { "name": "keyword.control.neutron" },
+                                        "2": { "name": "keyword.operator.arrow.neutron" }
+                                    }
+                                }
+                            ]
+                        }
+                    ]
                 }
             ]
         },
@@ -50,6 +101,10 @@
                 {
                     "name": "keyword.operator.arrow.neutron",
                     "match": "=>"
+                },
+                {
+                    "name": "keyword.operator.ternary.neutron",
+                    "match": "\\?|:"
                 }
             ]
         },
@@ -107,6 +162,22 @@
                         {
                             "name": "constant.character.escape.neutron",
                             "match": "\\\\."
+                        },
+                        {
+                            "name": "meta.string.interpolation.neutron",
+                            "begin": "\\$\\{",
+                            "beginCaptures": {
+                                "0": { "name": "punctuation.definition.template-expression.begin.neutron" }
+                            },
+                            "end": "\\}",
+                            "endCaptures": {
+                                "0": { "name": "punctuation.definition.template-expression.end.neutron" }
+                            },
+                            "patterns": [
+                                {
+                                    "include": "#expression"
+                                }
+                            ]
                         }
                     ]
                 },
@@ -174,6 +245,26 @@
         "imports": {
             "patterns": [
                 {
+                    "begin": "\\b(use)\\b\\s+(?:\\(.*?\\)\\s+)?=\\s+from\\s+",
+                    "beginCaptures": {
+                        "0": { "name": "keyword.control.import.selective" }
+                    },
+                    "end": "(;)",
+                    "endCaptures": {
+                        "1": { "name": "punctuation.terminator" }
+                    },
+                    "patterns": [
+                        {
+                            "name": "support.type.module.builtin.neutron",
+                            "match": "\\b(sys|json|math|convert|time|http|fmt|arrays|async)\\b"
+                        },
+                        {
+                            "name": "support.type.module",
+                            "match": "\\b[a-zA-Z_][a-zA-Z0-9_]*\\b"
+                        }
+                    ]
+                },
+                {
                     "begin": "\\b(use)\\b\\s+",
                     "beginCaptures": {
                         "1": { "name": "keyword.control.import" }
@@ -185,7 +276,7 @@
                     "patterns": [
                         {
                             "name": "support.type.module.builtin.neutron",
-                            "match": "\\b(sys|json|math|convert|time|http)\\b"
+                            "match": "\\b(sys|json|math|convert|time|http|fmt|arrays|async)\\b"
                         },
                         {
                             "name": "support.type.module",
@@ -194,10 +285,47 @@
                     ]
                 }
             ]
-        }
-        ,
+        },
+        "expression": {
+            "patterns": [
+                {
+                    "include": "#strings"
+                },
+                {
+                    "include": "#numbers"
+                },
+                {
+                    "include": "#keywords"
+                },
+                {
+                    "include": "#constants"
+                },
+                {
+                    "include": "#functions"
+                },
+                {
+                    "include": "#variables"
+                }
+            ]
+        },
         "file-imports": {
             "patterns": [
+                {
+                    "begin": "\\b(using)\\b\\s+(?:\\(.*?\\)\\s+)?=\\s+from\\s+",
+                    "beginCaptures": {
+                        "0": { "name": "keyword.control.import.selective" }
+                    },
+                    "end": "(;)",
+                    "endCaptures": {
+                        "1": { "name": "punctuation.terminator" }
+                    },
+                    "patterns": [
+                        {
+                            "name": "string.quoted.single.path.neutron",
+                            "match": "'(?:\\\\'|[^'])*'"
+                        }
+                    ]
+                },
                 {
                     "begin": "\\b(using)\\b\\s*",
                     "beginCaptures": {
@@ -238,6 +366,107 @@
                         }
                     ]
                 }
+            ]
+        },
+        "exception-handling": {
+            "patterns": [
+                {
+                    "name": "meta.exception.try.neutron",
+                    "begin": "\\b(try)\\b",
+                    "beginCaptures": {
+                        "1": { "name": "keyword.control.exception.neutron" }
+                    },
+                    "end": "(?<=\\})",
+                    "patterns": [
+                        {
+                            "include": "#block"
+                        },
+                        {
+                            "begin": "\\b(catch)\\b\\s*\\(",
+                            "beginCaptures": {
+                                "1": { "name": "keyword.control.exception.neutron" }
+                            },
+                            "end": "\\)",
+                            "name": "meta.exception.catch.parameters.neutron",
+                            "patterns": [
+                                {
+                                    "include": "#variables"
+                                }
+                            ]
+                        },
+                        {
+                            "include": "#block"
+                        },
+                        {
+                            "match": "\\b(finally)\\b",
+                            "name": "keyword.control.exception.neutron"
+                        },
+                        {
+                            "begin": "\\b(throw)\\b",
+                            "beginCaptures": {
+                                "1": { "name": "keyword.control.exception.neutron" }
+                            },
+                            "end": "(?=;|\\)|\\}|\\n)",
+                            "name": "meta.exception.throw.neutron",
+                            "patterns": [
+                                {
+                                    "include": "#expression"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "retry-statement": {
+            "patterns": [
+                {
+                    "name": "meta.retry.statement.neutron",
+                    "begin": "\\b(retry)\\b\\s*\\(",
+                    "beginCaptures": {
+                        "1": { "name": "keyword.control.neutron" }
+                    },
+                    "end": "\\)",
+                    "patterns": [
+                        {
+                            "include": "#expression"
+                        }
+                    ]
+                }
+            ]
+        },
+        "block": {
+            "patterns": [
+                {
+                    "begin": "\\{",
+                    "end": "\\}",
+                    "name": "meta.block.neutron",
+                    "patterns": [
+                        {
+                            "include": "#all-content"
+                        }
+                    ]
+                }
+            ]
+        },
+        "all-content": {
+            "patterns": [
+                { "include": "#comments" },
+                { "include": "#imports" },
+                { "include": "#file-imports" },
+                { "include": "#typed-variables" },
+                { "include": "#keywords" },
+                { "include": "#match-statements" },
+                { "include": "#exception-handling" },
+                { "include": "#retry-statement" },
+                { "include": "#operators" },
+                { "include": "#constants" },
+                { "include": "#types" },
+                { "include": "#strings" },
+                { "include": "#numbers" },
+                { "include": "#lambdas" },
+                { "include": "#functions" },
+                { "include": "#variables" }
             ]
         }
     }

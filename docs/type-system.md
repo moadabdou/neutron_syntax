@@ -244,6 +244,8 @@ public:
 - Methods: `.push()`, `.pop()`, `.slice()`, `.map()`, `.filter()`, `.find()`, `.indexOf()`, `.join()`, `.reverse()`, `.sort()`
 - Property: `.length`
 
+> ⚠️ **Common Mistake**: `.length` is a **property**, not a method. Use `arr.length`, NOT `arr.length()`. See [Common Pitfalls Guide](guides/common-pitfalls.md) for more details.
+
 **Example**:
 ```neutron
 var arr = [1, 2, 3];
@@ -529,11 +531,11 @@ var result = expr1 and expr2;
 Neutron provides module functions for explicit type conversion:
 
 ```neutron
-use convert;
+use fmt;
 
-var str = convert.to_string(42);      // "42"
-var num = convert.to_number("3.14");  // 3.14
-var bool = convert.to_boolean(1);     // true
+var str = fmt.to_str(42);      // "42"
+var num = fmt.to_float("3.14");  // 3.14
+var bool = fmt.to_int(1);        // 1 (the fmt module handles type conversion differently)
 ```
 
 ### Type Checking at Runtime

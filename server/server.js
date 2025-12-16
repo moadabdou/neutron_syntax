@@ -27,6 +27,11 @@ const connection = createConnection(ProposedFeatures.all);
 // Create a simple text document manager
 const documents = new TextDocuments(TextDocument);
 
+// For performance optimization, cache parsing results and implement debouncing
+const parseCache = new Map(); // Cache parsed ASTs by document URI
+const validationDelays = new Map(); // Track validation delays per document
+const VALIDATION_DELAY_MS = 300; // Delay in ms before validating after changes
+
 let hasConfigurationCapability = false;
 let hasWorkspaceFolderCapability = false;
 let hasDiagnosticRelatedInformationCapability = false;
@@ -88,12 +93,33 @@ const documentSettings = new Map();
 // Only keep settings for open documents
 documents.onDidClose((e) => {
     documentSettings.delete(e.document.uri);
+    // Clear any cached parsing results for this document
+    parseCache.delete(e.document.uri);
+    // Clear any pending validation delays
+    if (validationDelays.has(e.document.uri)) {
+        clearTimeout(validationDelays.get(e.document.uri));
+        validationDelays.delete(e.document.uri);
+    }
 });
 
 // The content of a text document has changed. This event is emitted
 // when the text document first opened or when its content has changed.
 documents.onDidChangeContent((change) => {
-    validateTextDocument(change.document);
+    // Implement debouncing to avoid validating on every keystroke
+    const uri = change.document.uri;
+
+    // Clear any existing timeout for this document
+    if (validationDelays.has(uri)) {
+        clearTimeout(validationDelays.get(uri));
+    }
+
+    // Set a new timeout
+    const timeout = setTimeout(() => {
+        validateTextDocument(change.document);
+        validationDelays.delete(uri);
+    }, VALIDATION_DELAY_MS);
+
+    validationDelays.set(uri, timeout);
 });
 
 // Validate a Neutron text document and report type errors
@@ -112,20 +138,83 @@ async function validateTextDocument(textDocument) {
     const text = textDocument.getText();
     const diagnostics = [];
 
-    // Parse and validate the text for type mismatches
-    const typeErrors = analyzeTypeSafety(text, textDocument);
+    try {
+        // Parse and validate the text for type mismatches
+        const typeErrors = analyzeTypeSafety(text, textDocument);
 
-    for (const error of typeErrors) {
+        for (const error of typeErrors) {
+            diagnostics.push({
+                severity: DiagnosticSeverity.Error,
+                range: error.range,
+                message: error.message,
+                source: 'Neutron Type Checker'
+            });
+        }
+    } catch (e) {
+        // If there's an unexpected error during validation, report it
+        console.error("Validation error:", e);
         diagnostics.push({
             severity: DiagnosticSeverity.Error,
-            range: error.range,
-            message: error.message,
+            range: {
+                start: { line: 0, character: 0 },
+                end: { line: 0, character: 1 }
+            },
+            message: `Validation error: ${e.message}`,
             source: 'Neutron Type Checker'
         });
     }
 
     // Send the computed diagnostics to VSCode.
     connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
+}
+
+// Analyze the text for type safety and syntax errors with performance optimization
+function analyzeTypeSafety(text, document) {
+    const errors = [];
+    const uri = document.uri;
+
+    // Check if we have a cached result and the text hasn't changed significantly
+    let result;
+    if (parseCache.has(uri)) {
+        const cached = parseCache.get(uri);
+        if (cached.text === text) {
+            // Text hasn't changed, reuse the cached AST
+            result = cached.ast;
+        } else {
+            // Text has changed, re-parse and update cache
+            const parser = new NeutronParser();
+            result = parser.parse(text);
+            parseCache.set(uri, { text, ast: result });
+        }
+    } else {
+        // No cached result, parse and store in cache
+        const parser = new NeutronParser();
+        result = parser.parse(text);
+        parseCache.set(uri, { text, ast: result });
+    }
+
+    // Add syntax errors (like missing semicolons) to the errors array
+    if (result.errors) {
+        for (const syntaxError of result.errors) {
+            errors.push({
+                range: {
+                    start: getPositionFromIndex(document, syntaxError.start),
+                    end: getPositionFromIndex(document, syntaxError.end)
+                },
+                message: syntaxError.message,
+                severity: DiagnosticSeverity.Error
+            });
+        }
+    }
+
+    // Only perform type checking if we have a valid AST
+    if (result && result.body) {
+        // Perform type checking on the AST using the imported TypeChecker
+        const typeChecker = new TypeChecker();
+        typeChecker.check(result, document, errors);
+    }
+
+    return errors;
 }
 
 // Get document settings based on URI

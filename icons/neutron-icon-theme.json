@@ -6,7 +6,8 @@
     }
   },
   "fileExtensions": {
-    "nt": "neutron-icon"
+    "nt": "neutron-icon",
+    "quark": "neutron-icon"
   },
   "fileNames": {}
 }

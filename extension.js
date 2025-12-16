@@ -9,13 +9,13 @@ const { LanguageClient, TransportKind } = require('vscode-languageclient/node');
 let client;
 
 const KEYWORDS = [
-  'var','if','else','while','for','return','break','continue','class','fun','this','and','or','not','in','new',
-  'match','case','default','use','using'
+  'var','if','elif','else','while','do','for','return','break','continue','class','fun','this','and','or','not','in','new',
+  'match','case','default','retry','try','catch','finally','throw','use','using'
 ];
 
 const TYPE_KEYWORDS = ['int','float','string','bool','array','object','any'];
 
-const BUILTIN_MODULES = ['sys','json','math','fmt','time','http','arrays'];
+const BUILTIN_MODULES = ['sys','json','math','fmt','time','http','arrays','async'];
 
 const BUILTIN_FUNCTIONS = [
   {
@@ -28,23 +28,28 @@ const BUILTIN_FUNCTIONS = [
 // Module functions from documentation
 const MODULE_FUNCTIONS = {
   sys: [
-    { label: 'read', detail: 'sys.read(filename) → string', documentation: 'Reads file content' },
-    { label: 'write', detail: 'sys.write(filename, content) → void', documentation: 'Writes content to file' },
-    { label: 'append', detail: 'sys.append(filename, content) → void', documentation: 'Appends content to file' },
-    { label: 'cp', detail: 'sys.cp(source, destination) → void', documentation: 'Copies file' },
-    { label: 'mv', detail: 'sys.mv(source, destination) → void', documentation: 'Moves file' },
-    { label: 'rm', detail: 'sys.rm(filename) → void', documentation: 'Removes file' },
-    { label: 'exists', detail: 'sys.exists(filename) → bool', documentation: 'Checks if file exists' },
-    { label: 'mkdir', detail: 'sys.mkdir(path) → void', documentation: 'Creates directory' },
-    { label: 'rmdir', detail: 'sys.rmdir(path) → void', documentation: 'Removes directory' },
+    { label: 'read', detail: 'sys.read(filepath) → string', documentation: 'Reads file content' },
+    { label: 'write', detail: 'sys.write(filepath, content) → bool', documentation: 'Writes content to file' },
+    { label: 'append', detail: 'sys.append(filepath, content) → bool', documentation: 'Appends content to file' },
+    { label: 'cp', detail: 'sys.cp(source, destination) → bool', documentation: 'Copies file' },
+    { label: 'mv', detail: 'sys.mv(source, destination) → bool', documentation: 'Moves file' },
+    { label: 'rm', detail: 'sys.rm(filepath) → bool', documentation: 'Removes file' },
+    { label: 'exists', detail: 'sys.exists(path) → bool', documentation: 'Checks if file or directory exists' },
+    { label: 'mkdir', detail: 'sys.mkdir(path) → bool', documentation: 'Creates directory' },
+    { label: 'rmdir', detail: 'sys.rmdir(path, recursive?) → bool', documentation: 'Removes directory (with optional recursive option)' },
+    { label: 'listdir', detail: 'sys.listdir(path) → array', documentation: 'Lists files in directory' },
+    { label: 'stat', detail: 'sys.stat(path) → object', documentation: 'Gets file/directory info' },
+    { label: 'chmod', detail: 'sys.chmod(path, mode) → bool', documentation: 'Changes file permissions' },
+    { label: 'tmpfile', detail: 'sys.tmpfile() → string', documentation: 'Creates temporary file path' },
     { label: 'cwd', detail: 'sys.cwd() → string', documentation: 'Gets current working directory' },
-    { label: 'chdir', detail: 'sys.chdir(path) → void', documentation: 'Changes working directory' },
-    { label: 'env', detail: 'sys.env() → object', documentation: 'Gets environment variables' },
+    { label: 'chdir', detail: 'sys.chdir(path) → bool', documentation: 'Changes working directory' },
+    { label: 'env', detail: 'sys.env(name) → string', documentation: 'Gets environment variable value' },
     { label: 'args', detail: 'sys.args() → array', documentation: 'Gets command line arguments' },
     { label: 'info', detail: 'sys.info() → object', documentation: 'Gets system information' },
+    { label: 'checkpoint', detail: 'sys.checkpoint(filepath) → bool', documentation: 'Saves execution state to file' },
     { label: 'exit', detail: 'sys.exit([code]) → void', documentation: 'Exits the program' },
     { label: 'exec', detail: 'sys.exec(command) → string', documentation: 'Executes system command' },
-    { label: 'input', detail: 'sys.input() → string', documentation: 'Gets user input' }
+    { label: 'input', detail: 'sys.input([prompt]) → string', documentation: 'Gets user input with optional prompt' }
   ],
   json: [
     { label: 'stringify', detail: 'json.stringify(value, [pretty]) → string', documentation: 'Converts to JSON string' },
@@ -102,6 +107,12 @@ const MODULE_FUNCTIONS = {
     { label: 'fill', detail: 'arrays.fill(arr, value, start, end) → void', documentation: 'Fills array with value' },
     { label: 'range', detail: 'arrays.range(start, end, [step]) → array', documentation: 'Creates array with range of numbers' },
     { label: 'shuffle', detail: 'arrays.shuffle(arr) → void', documentation: 'Shuffles array elements' }
+  ],
+  async: [
+    { label: 'run', detail: 'async.run(function) → void', documentation: 'Runs function asynchronously' },
+    { label: 'await', detail: 'async.await(promise) → value', documentation: 'Waits for async operation' },
+    { label: 'promise', detail: 'async.promise(executor) → promise', documentation: 'Creates a promise' },
+    { label: 'sleep', detail: 'async.sleep(milliseconds) → void', documentation: 'Async version of sleep' }
   ]
 };
 
@@ -262,7 +273,13 @@ function isInUsingString(linePrefix) {
 }
 
 function isInUse(linePrefix) {
-  return /\buse\s+[a-zA-Z_0-9\.]*$/.test(linePrefix);
+  // Check if we're in a regular use statement (not selective)
+  return /\buse\s+[a-zA-Z_0-9\.]*$/.test(linePrefix) && !/\buse\s+\(.*\)\s+=\s+from\s+.*$/.test(linePrefix);
+}
+
+function isInSelectiveUse(linePrefix) {
+  // Check if we're in a selective use statement
+  return /\buse\s+\(.*$/.test(linePrefix) || /\buse\s+\([^)]*$/.test(linePrefix);
 }
 
 /** @param {vscode.ExtensionContext} context */
@@ -410,6 +427,15 @@ function activate(context) {
       // Context-specific suggestions
       if (isInUsingString(prefix)) {
         return await suggestUsingFiles(prefix);
+      }
+      if (isInSelectiveUse(prefix)) {
+        // For selective imports, suggest module names after 'from'
+        if (prefix.includes('from')) {
+          return await suggestUseModules(prefix);
+        } else {
+          // If we're in the parentheses part, suggest module members (this is complex, so for now just return module suggestions)
+          return await suggestUseModules(prefix);
+        }
       }
       if (isInUse(prefix)) {
         return await suggestUseModules(prefix);

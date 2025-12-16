@@ -130,6 +130,9 @@ var x = 42;
 var name = "Alice";
 var isTrue = true;
 var empty = nil;
+
+// Multiple declarations
+var a = 1, b = 2;
 ```
 
 ### Functions
@@ -147,7 +150,7 @@ class Person {
     var name;
     var age;
     
-    fun initialize(n, a) {
+    init(n, a) {
         this.name = n;
         this.age = a;
     }
@@ -158,7 +161,7 @@ class Person {
 }
 
 var person = Person();
-person.initialize("Alice", 30);
+person.init("Alice", 30);
 person.greet();
 ```
 
@@ -211,6 +214,21 @@ var response = http.get("https://api.example.com");
 say(response.status);
 ```
 
+## Common Mistakes
+
+⚠️ **Important**: `.length` is a property, not a method!
+
+```neutron
+// ❌ Wrong
+var arr = [1, 2, 3];
+say(arr.length());  // RuntimeError!
+
+// ✅ Correct
+say(arr.length);    // 3
+```
+
+See the [Common Pitfalls Guide](common-pitfalls.md) for more tips!
+
 ## Common Issues
 
 **"curl not found" or "jsoncpp not found"**
@@ -229,6 +247,7 @@ say(response.status);
 ## Getting Help
 
 - **Documentation:** [docs/](../docs/)
+- **Common Pitfalls:** [common-pitfalls.md](common-pitfalls.md)
 - **Issues:** [GitHub Issues](https://github.com/yasakei/neutron/issues)
 - **Examples:** [programs/](../programs/)
 

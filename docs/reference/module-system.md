@@ -22,9 +22,10 @@ The following modules are built into the Neutron runtime and require explicit im
 - **sys** - File I/O, directory operations, environment access, process control (fully implemented)
 - **json** - JSON parsing and stringification
 - **math** - Mathematical operations
-- **convert** - Type conversion utilities
+- **fmt** - Type conversion and formatting utilities
 - **time** - Time and date functions
 - **http** - HTTP client operations
+- **async** - Asynchronous operations and multi-threading
 
 **Note:** Modules are lazily loaded - they're only initialized when you explicitly use `use modulename;`. This provides faster startup times and explicit dependencies.
 
@@ -42,8 +43,8 @@ var content = sys.read("data.txt");
 var obj = json.parse("{\"name\": \"test\"}");
 say(json.stringify(obj));
 
-// convert module
-var num = convert.int("42");
+// fmt module
+var num = fmt.to_int("42");
 say(num);
 ```
 
@@ -82,7 +83,72 @@ say(greet("World"));  // Output: Hello, World!
 say(VERSION);         // Output: 1.0.0
 ```
 
-## Error Handling
+## Selective Imports
+
+Import only specific symbols from modules or files using the `from` keyword:
+
+### Syntax
+```neutron
+// From modules
+use (symbol1, symbol2) = from modulename;
+
+// From files
+using (symbol1, symbol2) = from 'filepath.nt';
+```
+
+### Examples
+
+**Import specific functions from a module:**
+```neutron
+use (now, sleep) = from time;
+
+say(now());    // Available
+sleep(100);    // Available
+// format() is NOT available
+```
+
+**Import specific functions from a file:**
+
+**math_helpers.nt:**
+```neutron
+fun add(a, b) { return a + b; }
+fun subtract(a, b) { return a - b; }
+fun multiply(a, b) { return a * b; }
+```
+
+**main.nt:**
+```neutron
+using (add, multiply) = from 'math_helpers.nt';
+
+say(add(5, 3));      // Works: 8
+say(multiply(4, 2)); // Works: 8
+say(subtract(5, 2)); // Error: undefined variable
+```
+
+### Benefits
+
+- **Namespace clarity**: Only import what you need
+- **Avoid conflicts**: Prevent name collisions when importing from multiple sources
+- **Better performance**: Smaller global scope
+- **Explicit dependencies**: Clear which symbols come from which module
+
+### Comparison
+
+```neutron
+// Traditional import (imports everything)
+use time;
+time.now();
+time.sleep(100);
+time.format(timestamp, "%Y-%m-%d");
+
+// Selective import (imports only what you need)
+use (now, sleep) = from time;
+now();
+sleep(100);
+// format() is not available
+```
+
+---
 
 If you try to use a module without importing it, you'll get a helpful error message:
 
@@ -101,7 +167,7 @@ The files currently in `lib/` are wrapper files for the built-in modules. Since 
 
 ### Recommendation
 
-**Remove the lib/ folder** if you're only using built-in modules. The built-in modules (json, math, sys, convert, time, http) are now loaded directly from the runtime.
+**Remove the lib/ folder** if you're only using built-in modules. The built-in modules (json, math, sys, fmt, time, http) are now loaded directly from the runtime.
 
 If you want to keep custom `.nt` library files, you can:
 - Keep them in the project root
@@ -113,7 +179,7 @@ If you want to keep custom `.nt` library files, you can:
 1. **Import modules at the top of your file**
    ```neutron
    use json;
-   use convert;
+   use fmt;
    
    using 'utils.nt';
    using 'helpers.nt';

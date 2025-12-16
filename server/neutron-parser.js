@@ -1,4 +1,7 @@
-// neutron-parser.js - A simple parser for Neutron code
+// Copyright 2026 (c) Yasakei. All rights reserved.
+//
+// Licensed under Neutron Public License v1.0 (the "License");
+
 class NeutronParser {
   constructor() {
     this.tokens = [];
